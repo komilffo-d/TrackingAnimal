@@ -1,15 +1,14 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace TrackingAnimal.Models
+namespace TrackingAnimal.Models.DTO
 {
-    public class Account
+    public class AccountDTO
     {
-        [Key]
         public int Id { get; set; }
-        public string firstName { get; set; } 
+        public string firstName { get; set; }
         public string lastName { get; set; }
+        [Required]
         [EmailAddress]
         public string email { get; set; }
-        public string password { get; set; }
     }
 }

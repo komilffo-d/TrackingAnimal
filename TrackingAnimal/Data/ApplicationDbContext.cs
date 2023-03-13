@@ -5,10 +5,14 @@ namespace TrackingAnimal.Data
 {
     public class ApplicationDbContext:DbContext
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { 
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) {
+            Database.EnsureCreated();
             
         }
         public DbSet<Account> Accounts { get; set; }
+        public DbSet<LocationPoint> Locations { get; set; }
+        public DbSet<AnimalType> AnimalTypes { get; set; }
+        public DbSet<LocationVisitedAnimal> locationVisitedAnimals { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Account>().HasData(

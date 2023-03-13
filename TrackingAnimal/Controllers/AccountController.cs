@@ -1,12 +1,15 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Identity.Client;
 using Microsoft.IdentityModel.Tokens;
 using TrackingAnimal.Data;
 using TrackingAnimal.Models;
+using TrackingAnimal.Models.DTO;
 
 namespace TrackingAnimal.Controllers
 {
     [Route("/accounts")]
+    [ApiController]
     public class AccountController :Controller
     {
         private readonly ApplicationDbContext _context;
@@ -14,8 +17,8 @@ namespace TrackingAnimal.Controllers
         {
             _context = context;
         }
-        [HttpGet("{accountId}")]
-        public ActionResult<Account> getAccount(int accountId)
+        [HttpGet("{accountId}", Name = "getAccount")]
+        public ActionResult<AccountDTO> getAccount(int accountId)
         {
             if (accountId == null  || accountId <= 0)
             {
@@ -28,7 +31,14 @@ namespace TrackingAnimal.Controllers
             }
             else
             {
-                return Ok(account);
+                var model = new AccountDTO()
+                {
+                    Id = account.Id,
+                    firstName = account.firstName,
+                    lastName = account.lastName,
+                    email = account.email
+                };
+                return Ok(model);
             }
             
         }
@@ -98,6 +108,7 @@ namespace TrackingAnimal.Controllers
         [HttpDelete("{accountId}")]
         public ActionResult deleteAccount(int accountId)
         {
+            
             if(accountId <= 0)
             {
                 return BadRequest();
