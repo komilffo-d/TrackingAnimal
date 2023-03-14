@@ -17,7 +17,7 @@ namespace TrackingAnimal.Controllers
             _context = context;
         }
         [HttpPost]
-        public ActionResult<Account> registerAccount([FromBody] Account accountDTO)
+        public ActionResult<AccountDTO> registerAccount([FromBody] AccountDTO accountDTO)
         {
             if (
                 String.IsNullOrWhiteSpace(accountDTO.firstName) ||
@@ -28,22 +28,33 @@ namespace TrackingAnimal.Controllers
             {
                 return BadRequest();
             }
-            if(accountDTO.Id > 0)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError);
-            }
             var account = _context.Accounts.FirstOrDefault(account => account.email ==accountDTO.email) ;
             if (account == null)
             {
-                _context.Accounts.Add(accountDTO);
+                var model = new Account()
+                {
+                    firstName = accountDTO.firstName,
+                    lastName = accountDTO.lastName,
+                    email = accountDTO.email,
+                    password = accountDTO.password
+                };
+                _context.Accounts.Add(model);
                 _context.SaveChanges();
-                return CreatedAtAction("getAccount", "Account", new {  id = accountDTO.Id }, accountDTO);
+
+                var olderId = _context.Accounts.OrderByDescending(a => a.Id).FirstOrDefault()!=null ? _context.Accounts.OrderByDescending(a => a.Id).FirstOrDefault().Id +1 : 1;
+                var sendModel = new AccountDTO()
+                {
+                    Id = olderId,
+                    firstName = accountDTO.firstName,
+                    lastName = accountDTO.lastName,
+                    email = accountDTO.email
+                };
+                return CreatedAtAction("getAccount", "Account", new { accountId = sendModel.Id }, sendModel);
             }
-            if (account.email == accountDTO.email)
+            else
             {
                 return Conflict();
             }
-            return NotFound();
         }
     }
 }
