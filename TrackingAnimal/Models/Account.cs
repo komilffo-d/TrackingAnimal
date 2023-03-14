@@ -11,5 +11,6 @@ namespace TrackingAnimal.Models
         [EmailAddress]
         public string email { get; set; }
         public string password { get; set; }
+        public List<Animal> Animals { get; set; } = new ();
     }
 }
