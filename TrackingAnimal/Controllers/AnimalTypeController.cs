@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System;
 using TrackingAnimal.Data;
 using TrackingAnimal.Models;
@@ -17,18 +18,23 @@ namespace TrackingAnimal.Controllers
         }
 
         [HttpGet("{typeId}", Name = nameof(getTypeAnimal))]
-        public ActionResult<AnimalType> getTypeAnimal(int typeId)
+        public ActionResult<AnimalTypeDTO> getTypeAnimal(int typeId)
         {
             if (typeId <= 0)
             {
                 return BadRequest();
             }
-            var typeAnimal = _context.AnimalTypes.FirstOrDefault(type => type.Id == typeId);
+            var typeAnimal = _context.AnimalTypes.AsNoTracking().FirstOrDefault(type => type.Id == typeId);
             if (typeAnimal == null)
             {
                 return NotFound();
             }
-            return Ok(typeAnimal);
+            var model = new AnimalTypeDTO()
+            {
+                Id = typeAnimal.Id,
+                Type = typeAnimal.Type
+            };
+            return Ok(model);
         }
         [HttpPost]
         public ActionResult<AnimalTypeDTO> addLocationPoint([FromBody] AnimalTypeDTO animalTypeDTO)
@@ -40,8 +46,8 @@ namespace TrackingAnimal.Controllers
             var animalType = _context.AnimalTypes.FirstOrDefault(type => type.Type == animalTypeDTO.Type);
             if (animalType == null)
             {
-                var lostId = _context.AnimalTypes.OrderByDescending(type => type.Id).FirstOrDefault() != null ? _context.AnimalTypes.OrderByDescending(type => type.Id).FirstOrDefault().Id + 1 : 1;
-                animalTypeDTO.Id = lostId;
+                var olderId = _context.AnimalTypes.OrderByDescending(type => type.Id).FirstOrDefault() != null ? _context.AnimalTypes.OrderByDescending(type => type.Id).FirstOrDefault().Id + 1 : 1;
+                animalTypeDTO.Id = olderId;
                 var model = new AnimalType()
                 {
                     Type=animalTypeDTO.Type,
@@ -56,13 +62,13 @@ namespace TrackingAnimal.Controllers
             }
         }
         [HttpPut("{typeId}")]
-        public ActionResult<AnimalType> updateAccount(int typeId, [FromBody] AnimalType animalTypeDTO)
+        public ActionResult<AnimalTypeDTO> updateAccount(int typeId, [FromBody] AnimalTypeDTO animalTypeDTO)
         {
             if (String.IsNullOrWhiteSpace(animalTypeDTO.Type) || !ModelState.IsValid || typeId <=0)
             {
                 return BadRequest();
             }
-            var animalType = _context.AnimalTypes.FirstOrDefault(type => type.Id == animalTypeDTO.Id && type.Id == typeId);
+            var animalType = _context.AnimalTypes.FirstOrDefault(type => type.Id == typeId);
             if (animalType == null)
             {
                 return NotFound();
@@ -73,6 +79,8 @@ namespace TrackingAnimal.Controllers
             }
             else
             {
+                var olderId = _context.AnimalTypes.OrderByDescending(t => t.Id).FirstOrDefault()!=null ? _context.AnimalTypes.OrderByDescending(t => t.Id).FirstOrDefault().Id + 1 : 1;
+                animalTypeDTO.Id = olderId;
                 animalType.Type = animalTypeDTO.Type;
                 _context.AnimalTypes.Update(animalType);
                 _context.SaveChanges();

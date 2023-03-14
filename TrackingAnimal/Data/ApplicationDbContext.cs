@@ -6,7 +6,6 @@ namespace TrackingAnimal.Data
     public class ApplicationDbContext:DbContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) {
-            Database.EnsureDeleted();
             Database.EnsureCreated();
             
         }
