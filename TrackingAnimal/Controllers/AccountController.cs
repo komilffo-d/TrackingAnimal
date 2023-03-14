@@ -36,7 +36,7 @@ namespace TrackingAnimal.Controllers
                     Id = account.Id,
                     firstName = account.firstName,
                     lastName = account.lastName,
-                    email = account.email
+                    email = account.email,
                 };
                 return Ok(model);
             }
@@ -70,7 +70,7 @@ namespace TrackingAnimal.Controllers
             }).Skip(from).Take(size).OrderBy(account => account.Id);
             var model = accounts.ToList().Select(account =>
                  {
-                     return new 
+                     return new AccountDTO()
                            {
                                     Id = account.Id,
                                     firstName = account.firstName,
@@ -84,7 +84,7 @@ namespace TrackingAnimal.Controllers
             
         }
         [HttpPut("{accountId}")]
-        public ActionResult<Account> updateAccount(int accountId, [FromBody] Account accountDTO)
+        public ActionResult<AccountDTO> updateAccount(int accountId, [FromBody] AccountDTO accountDTO)
         {
             if (
                 accountId <= 0 || 
@@ -96,7 +96,7 @@ namespace TrackingAnimal.Controllers
             {
                 return BadRequest();
             }
-            var account = _context.Accounts.FirstOrDefault(account => account.Id == accountId && account.Id ==accountDTO.Id);
+            var account = _context.Accounts.FirstOrDefault(account => account.Id == accountId);
             if (account == null)
             {
                 return NotFound();
@@ -113,7 +113,14 @@ namespace TrackingAnimal.Controllers
                 account.password=accountDTO.password;
                 _context.Accounts.Update(account);
                 _context.SaveChanges();
-                return Ok(account);
+                var model = new AccountDTO()
+                {
+                    Id = account.Id,
+                    firstName = account.firstName,
+                    lastName = account.lastName,
+                    email = account.email
+                };
+                return Ok(model);
             }
         }
         [HttpDelete("{accountId}")]
