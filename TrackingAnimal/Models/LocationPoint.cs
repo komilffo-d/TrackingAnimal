@@ -7,9 +7,9 @@ namespace TrackingAnimal.Models
     {
         [Key]
         public long Id { get; set; }
-        public double Lalitude { get; set; }
+        public double Latitude { get; set; }
         public double Longitude { get; set; }
-        public List<Animal> Animals { get; set; } = new();
-        public List<LocationVisitedAnimal> LocationVisited { get; set; } = new();
+        public List<Animal> ?Animals { get; set; } = new();
+        public List<LocationVisitedAnimal> ? LocationVisited { get; set; } = new();
     }
 }

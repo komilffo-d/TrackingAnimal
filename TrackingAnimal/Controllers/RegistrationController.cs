@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
 using TrackingAnimal.Data;
@@ -19,6 +20,10 @@ namespace TrackingAnimal.Controllers
         [HttpPost]
         public ActionResult<AccountDTO> registerAccount([FromBody] AccountDTO accountDTO)
         {
+            if (HttpContext.User.Identity.IsAuthenticated)
+            {
+                return Forbid();
+            }
             if (
                 String.IsNullOrWhiteSpace(accountDTO.firstName) ||
                 String.IsNullOrWhiteSpace(accountDTO.lastName) ||

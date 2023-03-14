@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using TrackingAnimal.Data;
 using TrackingAnimal.Models;
 using TrackingAnimal.Models.DTO;
 
 namespace TrackingAnimal.Controllers
 {
+
     [Route("/locations")]
     [ApiController]
     public class LocationPointController : Controller
@@ -29,30 +31,31 @@ namespace TrackingAnimal.Controllers
             var model = new LocationPointDTO()
             {
                 Id = locationPoint.Id,
-                Lalitude = locationPoint.Lalitude,
+                Latitude = locationPoint.Latitude,
                 Longitude = locationPoint.Longitude
             };
             return Ok(model);
         }
+        [Authorize]
         [HttpPost]
         public ActionResult<LocationPointDTO> addLocationPoint([FromBody] LocationPointDTO locationPointDTO)
         {
-            if (locationPointDTO.Lalitude ==null || 
-                locationPointDTO.Lalitude < -90 || 
-                locationPointDTO.Lalitude > 90 || 
+            if (locationPointDTO.Latitude ==null || 
+                locationPointDTO.Latitude < -90 || 
+                locationPointDTO.Latitude > 90 || 
                 locationPointDTO.Longitude == null || 
                 locationPointDTO.Longitude < -180 || 
                 locationPointDTO.Longitude > 180 )
             {
                 return BadRequest();
             }
-            var locationPoint = _context.Locations.FirstOrDefault(point => point.Longitude == locationPointDTO.Longitude && point.Lalitude == locationPointDTO.Lalitude);
+            var locationPoint = _context.Locations.FirstOrDefault(point => point.Longitude == locationPointDTO.Longitude && point.Latitude == locationPointDTO.Latitude);
             if (locationPoint == null)
             {
 
                 var model = new LocationPoint()
                 {
-                    Lalitude = locationPointDTO.Lalitude,
+                    Latitude = locationPointDTO.Latitude,
                     Longitude = locationPointDTO.Longitude
                 };
                 _context.Locations.Add(model);
@@ -61,7 +64,7 @@ namespace TrackingAnimal.Controllers
                 var sendModel = new LocationPointDTO()
                 {
                     Id = olderId,
-                    Lalitude = locationPointDTO.Lalitude,
+                    Latitude = locationPointDTO.Latitude,
                     Longitude = locationPointDTO.Longitude
                 };
                 return CreatedAtRoute("getLocationPoint", new { pointId = sendModel.Id}, sendModel);
@@ -71,14 +74,15 @@ namespace TrackingAnimal.Controllers
                 return Conflict();
             }
         }
+        [Authorize]
         [HttpPut("{pointId}")]
         public ActionResult<LocationPointDTO> updateAccount(int pointId, [FromBody] LocationPointDTO locationPointDTO)
         {
             if (
                 pointId <= 0 || 
-                locationPointDTO.Lalitude == null ||
-                locationPointDTO.Lalitude < -90 ||
-                locationPointDTO.Lalitude > 90 ||
+                locationPointDTO.Latitude == null ||
+                locationPointDTO.Latitude < -90 ||
+                locationPointDTO.Latitude > 90 ||
                 locationPointDTO.Longitude == null ||
                 locationPointDTO.Longitude < -180 ||
                 locationPointDTO.Longitude > 180 ||
@@ -91,27 +95,28 @@ namespace TrackingAnimal.Controllers
             {
                 return NotFound();
             }
-            if (locationPoint.Longitude == locationPointDTO.Longitude && locationPoint.Lalitude == locationPointDTO.Lalitude)
+            if (locationPoint.Longitude == locationPointDTO.Longitude && locationPoint.Latitude == locationPointDTO.Latitude)
             {
                 return Conflict();
             }
             else
             {
                 locationPoint.Longitude = locationPointDTO.Longitude;
-                locationPoint.Lalitude = locationPointDTO.Lalitude;
+                locationPoint.Latitude = locationPointDTO.Latitude;
                 _context.Locations.Update(locationPoint);
                 _context.SaveChanges();
                 var olderId = _context.Locations.OrderByDescending(point => point.Id).FirstOrDefault() != null ? _context.Locations.OrderByDescending(point => point.Id).FirstOrDefault().Id : 1;
                 var sendModel = new LocationPointDTO()
                 {
                     Id = olderId,
-                    Lalitude = locationPoint.Lalitude,
+                    Latitude = locationPoint.Latitude,
                     Longitude = locationPoint.Longitude
 
                 };
                 return Ok(sendModel);    
             }
         }
+        [Authorize]
         [HttpDelete("{pointId}")]
         public ActionResult deleteAccount(int pointId)
         {

@@ -8,7 +8,7 @@ namespace TrackingAnimal.Models.DTO
         [Key]
         public long Id { get; set; }
         [AllowNull]
-        public double Lalitude { get; set; }
+        public double Latitude { get; set; }
         [AllowNull]
         public double Longitude { get; set; }
     }

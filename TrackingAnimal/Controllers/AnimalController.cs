@@ -9,6 +9,7 @@ using TrackingAnimal.Models.DTO;
 using TrackingAnimal.Types;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using Microsoft.AspNetCore.Authorization;
 
 namespace TrackingAnimal.Controllers
 {
@@ -116,6 +117,7 @@ namespace TrackingAnimal.Controllers
             return Ok(model);
 
         }
+        [Authorize]
         [HttpPost]
         public ActionResult<AnimalDTO> createAnimal([FromBody] AnimalDTO animalDTO)
         {
@@ -123,13 +125,13 @@ namespace TrackingAnimal.Controllers
 #pragma warning disable CS8619 
             var model = new Animal()
             {
-                animalTypes = animalDTO.animalTypes.Select(TypeId =>
+                animalTypes =  animalDTO.animalTypes.Select(TypeId =>
                 {
                     var animalDbType = _context.AnimalTypes.FirstOrDefault(animalType => animalType.Id == TypeId);
                     if (animalDbType != null)
                         _context.Entry(animalDbType).Collection(a => a.Animal).Load();
                     return animalDbType;
-                }).ToList(),
+                }).Where(t => t != null).ToList(),
                 weight = animalDTO.weight,
                 length = animalDTO.length,
                 height = animalDTO.height,
@@ -159,6 +161,7 @@ namespace TrackingAnimal.Controllers
             };
             return Ok(sendModel);
         }
+        [Authorize]
         [HttpPut("{animalId}")]
         public ActionResult<AnimalDTO> updateAnimal(int animalId, [FromBody] AnimalDTO animalDTO)
         {
@@ -191,6 +194,7 @@ namespace TrackingAnimal.Controllers
             };
             return Ok(sendModel);
         }
+        [Authorize]
         [HttpDelete("{animalId}")]
         public ActionResult<AnimalDTO> deleteAnimal(int animalId)
         {
@@ -201,6 +205,7 @@ namespace TrackingAnimal.Controllers
 
             return Ok();
         }
+        [Authorize]
         [HttpPost("{animalId:long}/types/{typeId:long}")]
         public ActionResult changeTypeForAnimal(int animalId, int typeId)
         {
@@ -243,6 +248,7 @@ namespace TrackingAnimal.Controllers
                 return NotFound();
             }
         }
+        [Authorize]
         [HttpPut("{animalId}/types")]
         public ActionResult changeTypeForAnimal(int animalId, [FromBody] ChangeType data)
         {
@@ -292,6 +298,7 @@ namespace TrackingAnimal.Controllers
                 return NotFound();
             }
         }
+        [Authorize]
         [HttpDelete("{animalId:long}/types/{typeId:long}")]
         public ActionResult<AnimalDTO> deleteTypeForAnimal(long animalId, long typeId)
         {

@@ -10,7 +10,7 @@ namespace TrackingAnimal.Models
 
         public long Id { get; set; }
 
-        public List<AnimalType> animalTypes { get; set; } = new List<AnimalType>();
+        public List<AnimalType>? animalTypes { get; set; } = new List<AnimalType>();
 
         public float weight { get; set; }
         public float length { get; set; }

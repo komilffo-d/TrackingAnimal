@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
 using TrackingAnimal.Data;
@@ -36,6 +37,7 @@ namespace TrackingAnimal.Controllers
             };
             return Ok(model);
         }
+        [Authorize]
         [HttpPost]
         public ActionResult<AnimalTypeDTO> addLocationPoint([FromBody] AnimalTypeDTO animalTypeDTO)
         {
@@ -61,6 +63,7 @@ namespace TrackingAnimal.Controllers
                 return Conflict();
             }
         }
+        [Authorize]
         [HttpPut("{typeId}")]
         public ActionResult<AnimalTypeDTO> updateAccount(int typeId, [FromBody] AnimalTypeDTO animalTypeDTO)
         {
@@ -87,6 +90,7 @@ namespace TrackingAnimal.Controllers
                 return Ok(animalTypeDTO);
             }
         }
+        [Authorize]
         [HttpDelete("{typeId}")]
         public ActionResult deleteAccount(int typeId)
         {

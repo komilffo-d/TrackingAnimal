@@ -25,4 +25,4 @@ services:
       - webapi
     environment:
       SERVER_URL: http://webapi:80
-      STAGE: 0
+      STAGE: all

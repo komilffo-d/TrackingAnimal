@@ -7,7 +7,6 @@ namespace TrackingAnimal.Data
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) {
             Database.EnsureCreated();
-            
         }
         public DbSet<Account> Accounts { get; set; }
         public DbSet<LocationPoint> Locations { get; set; }

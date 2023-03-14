@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using TrackingAnimal.Data;
 using TrackingAnimal.Models;
 using TrackingAnimal.Models.DTO;
@@ -15,6 +16,8 @@ namespace TrackingAnimal.Controllers
         {
             _context = context;
         }
+
+        [Route("")]
         [HttpGet(Name = nameof(getLocationVisitedPointsByAnimal))]
         public ActionResult getLocationVisitedPointsByAnimal(
             long animalId,
@@ -50,6 +53,7 @@ namespace TrackingAnimal.Controllers
                 return NotFound();
             }
         }
+        [Authorize]
         [HttpPost("{pointId:long}")]
         public ActionResult createLocationVisitedPointByAnimal(long animalId, long pointId)
         {
@@ -87,6 +91,7 @@ namespace TrackingAnimal.Controllers
                 return BadRequest();
             }
         }
+        [Authorize]
         [HttpDelete("{visitedPointId}")]
         public ActionResult deleteLocationVisitedPointsByAnimal(long animalId, long visitedPointId)
         {
@@ -112,6 +117,7 @@ namespace TrackingAnimal.Controllers
                 return BadRequest();
             }
         }
+        [Authorize]
         [HttpPut]
         public ActionResult changeLocationVisitedPointsByAnimal(long animalId, [FromBody] ChangeVisitedLocation data)
         {

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿    using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Identity.Client;
 using Microsoft.IdentityModel.Tokens;
@@ -8,6 +8,7 @@ using TrackingAnimal.Models.DTO;
 
 namespace TrackingAnimal.Controllers
 {
+    
     [Route("/accounts")]
     [ApiController]
     public class AccountController :Controller
@@ -17,6 +18,7 @@ namespace TrackingAnimal.Controllers
         {
             _context = context;
         }
+        
         [HttpGet("{accountId}", Name = "getAccount")]
         public ActionResult<AccountDTO> getAccount(int accountId)
         {
@@ -83,6 +85,7 @@ namespace TrackingAnimal.Controllers
             return Ok(model);
             
         }
+        [Authorize]
         [HttpPut("{accountId}")]
         public ActionResult<AccountDTO> updateAccount(int accountId, [FromBody] AccountDTO accountDTO)
         {
@@ -123,6 +126,7 @@ namespace TrackingAnimal.Controllers
                 return Ok(model);
             }
         }
+        [Authorize]
         [HttpDelete("{accountId}")]
         public ActionResult deleteAccount(int accountId)
         {
