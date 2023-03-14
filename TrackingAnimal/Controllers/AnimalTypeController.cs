@@ -2,10 +2,11 @@
 using System;
 using TrackingAnimal.Data;
 using TrackingAnimal.Models;
+using TrackingAnimal.Models.DTO;
 
 namespace TrackingAnimal.Controllers
 {
-    [Route("/animal/types")]
+    [Route("/animals/types")]
     [ApiController]
     public class AnimalTypeController :Controller
     {
@@ -30,7 +31,7 @@ namespace TrackingAnimal.Controllers
             return Ok(typeAnimal);
         }
         [HttpPost]
-        public ActionResult<AnimalType> addLocationPoint([FromBody] AnimalType animalTypeDTO)
+        public ActionResult<AnimalTypeDTO> addLocationPoint([FromBody] AnimalTypeDTO animalTypeDTO)
         {
             if (String.IsNullOrWhiteSpace(animalTypeDTO.Type))
             {

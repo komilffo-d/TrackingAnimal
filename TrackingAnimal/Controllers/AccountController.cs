@@ -44,22 +44,22 @@ namespace TrackingAnimal.Controllers
         }
         [Route("search")]
         [HttpGet]
-        public ActionResult<List<Account>> searchAccounts(
-            [FromQuery(Name = "firstName")] string firstName,
-            [FromQuery(Name = "lastName")] string lastName,
-            [FromQuery(Name = "email")] string email,
+        public ActionResult<List<AccountDTO>> searchAccounts(
+            [FromQuery(Name = "firstName")] string ? firstName,
+            [FromQuery(Name = "lastName")] string ? lastName,
+            [FromQuery(Name = "email")] string ? email ,
             [FromQuery(Name = "from")] int from =0,
             [FromQuery(Name = "size")] int size =10
             )
         {
+            if(from < 0 || size <= 0)
+            {
+                return BadRequest();
+            }
             var accounts = _context.Accounts.ToList().Where(account =>
             {
-                Console.WriteLine(account);
-                if (account.firstName == null || account.lastName == null || account.email == null)
-                {
-                    return false;
-                }
-                if (account.firstName.ToLower().Contains(firstName.ToLower()) && account.lastName.ToLower().Contains(lastName.ToLower()) && account.email.ToLower().Contains(email.ToLower()))
+
+                if ((firstName==null || account.firstName.ToLower().Contains(firstName.ToLower())) && (lastName == null || account.lastName.ToLower().Contains(lastName.ToLower()) ) && (email == null || account.email.ToLower().Contains(email.ToLower()) ))
                 {
                     return true;
                 }
@@ -67,9 +67,20 @@ namespace TrackingAnimal.Controllers
                 {
                     return false;
                 }
-            }).Skip(from).Take(size);
-            Console.WriteLine(accounts);
-            return Ok(accounts);
+            }).Skip(from).Take(size).OrderBy(account => account.Id);
+            var model = accounts.ToList().Select(account =>
+                 {
+                     return new 
+                           {
+                                    Id = account.Id,
+                                    firstName = account.firstName,
+                                    lastName = account.lastName,
+                                    email = account.email
+                            };
+                 });
+             
+
+            return Ok(model);
             
         }
         [HttpPut("{accountId}")]

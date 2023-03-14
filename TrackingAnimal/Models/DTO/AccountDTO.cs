@@ -7,7 +7,6 @@ namespace TrackingAnimal.Models.DTO
         public int Id { get; set; }
         public string firstName { get; set; }
         public string lastName { get; set; }
-        [Required]
         [EmailAddress]
         public string email { get; set; }
     }

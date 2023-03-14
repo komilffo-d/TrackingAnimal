@@ -13,6 +13,7 @@ namespace TrackingAnimal.Data
         public DbSet<LocationPoint> Locations { get; set; }
         public DbSet<AnimalType> AnimalTypes { get; set; }
         public DbSet<LocationVisitedAnimal> locationVisitedAnimals { get; set; }
+        public DbSet<Animal> Animals { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Account>().HasData(
