@@ -5,6 +5,7 @@ using TrackingAnimal.Data;
 using TrackingAnimal.Models;
 using TrackingAnimal.Models.DTO;
 using TrackingAnimal.Types;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TrackingAnimal.Controllers
 {
@@ -56,36 +57,42 @@ namespace TrackingAnimal.Controllers
         }
         [Authorize]
         [HttpPost("{animalId:long}/locations/{pointId:long}")]
-        public ActionResult createLocationVisitedPointByAnimal(long animalId, long pointId)
+        public ActionResult createLocationVisitedPointByAnimal(long? animalId, long? pointId)
         {
-            var animal = _context.Animals.FirstOrDefault(a => a.Id == animalId);
-            if (animal != null)
+            if (animalId == null || animalId <= 0 || pointId == null || pointId <= 0)
             {
-                var locationPoint = _context.Locations.FirstOrDefault(l => l.Id == pointId);
-                if (locationPoint != null)
+                return BadRequest();
+            }
+            var animal = _context.Animals.FirstOrDefault(a => a.Id == animalId);
+            var locationPoint = _context.Locations.FirstOrDefault(l => l.Id == pointId);
+            _context.Entry(locationPoint).Collection(l => l.Animals).Load();
+            if (animal.lifeStatus == "DEAD" || locationPoint.Animals.Count() > 0)
+            {
+                return BadRequest();
+            }
+            if (animal.visitedLocations.Count() == 0 && pointId == animal.chippingLocationId)
+            {
+                return BadRequest();
+            }
+            if (animal != null && locationPoint != null)
+            {
+                var model = new LocationVisitedAnimal()
                 {
-                    var model = new LocationVisitedAnimal()
-                    {
-                        dateTimeOfVisitLocationPoint = DateTime.Now,
-                        LocationPointId = (long)pointId
-                    };
-                    _context.Entry(animal).Collection(a => a.visitedLocations).Load();
-                    animal.visitedLocations.Add(model);
-                    _context.SaveChanges();
+                    dateTimeOfVisitLocationPoint = DateTime.Now,
+                    LocationPointId = (long)pointId
+                };
+                _context.Entry(animal).Collection(a => a.visitedLocations).Load();
+                animal.visitedLocations.Add(model);
+                _context.SaveChanges();
 
 
-                    var sendModel = new LocationVisitedAnimalDTO()
-                    {
-                        Id = model.Id,
-                        dateTimeOfVisitLocationPoint = model.dateTimeOfVisitLocationPoint,
-                        LocationPointId = model.LocationPointId
-                    };
-                    return CreatedAtRoute(nameof(getLocationVisitedPointsByAnimal), new { animalId = model.Id }, sendModel);
-                }
-                else
+                var sendModel = new LocationVisitedAnimalDTO()
                 {
-                    return BadRequest();
-                }
+                    Id = model.Id,
+                    dateTimeOfVisitLocationPoint = model.dateTimeOfVisitLocationPoint,
+                    LocationPointId = model.LocationPointId
+                };
+                return CreatedAtRoute(nameof(getLocationVisitedPointsByAnimal), new { animalId = model.Id }, sendModel);
             }
             else
             {
@@ -94,44 +101,55 @@ namespace TrackingAnimal.Controllers
         }
         [Authorize]
         [HttpDelete("{animalId:long}/locations/{visitedPointId}")]
-        public ActionResult deleteLocationVisitedPointsByAnimal(long animalId, long visitedPointId)
+        public ActionResult deleteLocationVisitedPointsByAnimal(long? animalId, long? visitedPointId)
         {
-            var animal = _context.Animals.FirstOrDefault(a => a.Id == animalId);
-            if (animal != null)
+            if (animalId <= 0 || animalId == null ||
+                visitedPointId == null || visitedPointId <=0)
             {
-                _context.Entry(animal).Collection(a => a.visitedLocations).Load();
-                var visitedlocationPoint = animal.visitedLocations.FirstOrDefault(l => l.Id == visitedPointId);
-                if (visitedlocationPoint != null)
-                {
-                    animal.visitedLocations.Remove(visitedlocationPoint);
+                return BadRequest();
+            }
+            var animal = _context.Animals.FirstOrDefault(a => a.Id == animalId);
+            _context.Entry(animal).Collection(a => a.visitedLocations).Load();
+            var visitedlocationPointByAnimal = animal.visitedLocations.FirstOrDefault(l => l.Id == visitedPointId);
+            var visitedLocationPoint = _context.locationVisitedAnimals.FirstOrDefault(l => l.Id == visitedPointId);
+            if (animal != null  && visitedlocationPointByAnimal!=null && visitedLocationPoint != null)
+            {
+                    animal.visitedLocations.Remove(visitedlocationPointByAnimal);
                     _context.SaveChanges();
                     return Ok();
-                }
-                else
-                {
-                    return BadRequest();
-                }
-
             }
             else
             {
-                return BadRequest();
+                return NotFound();
             }
         }
         [Authorize]
         [HttpPut("{animalId:long}/locations")]
-        public ActionResult changeLocationVisitedPointsByAnimal(long animalId, [FromBody] ChangeVisitedLocation data)
+        public ActionResult changeLocationVisitedPointsByAnimal(long? animalId, [FromBody] ChangeVisitedLocation data)
         {
-            var animal = _context.Animals.FirstOrDefault(a => a.Id == animalId);
-            if (animal != null)
+            if (animalId <= 0 || animalId == null ||
+                data.visitedLocationPointId == null || data.visitedLocationPointId <= 0 ||
+                data.locationPointId == null || data.visitedLocationPointId <= 0)
             {
-                _context.Entry(animal).Collection(u => u.visitedLocations).Load();
-                var visitedLocationPoint = animal.visitedLocations.FirstOrDefault(l => l.Id == data.visitedLocationPointId);
-                var newLocationPoint = _context.Locations.FirstOrDefault(l => l.Id == data.locationPointId);
-                if (visitedLocationPoint != null && newLocationPoint != null)
+                return BadRequest();
+            }
+            var animal = _context.Animals.FirstOrDefault(a => a.Id == animalId);
+            var visitedLocationPoint = _context.locationVisitedAnimals.FirstOrDefault(l => l.Id == data.visitedLocationPointId);
+            var newLocationPoint = _context.Locations.FirstOrDefault(l => l.Id == data.locationPointId);
+            _context.Entry(animal).Collection(u => u.visitedLocations).Load();
+            var visitedLocationPointByAnimal = animal.visitedLocations.FirstOrDefault(l => l.Id == data.visitedLocationPointId);
+
+            if (newLocationPoint.Id == visitedLocationPointByAnimal.LocationPointId)
+            {
+                return BadRequest();
+            }
+            if (animal != null && visitedLocationPoint != null)
+            {
+
+                if (visitedLocationPointByAnimal != null && newLocationPoint != null)
                 {
                     ///Удаление старого типа и сохранение
-                    animal.visitedLocations.Remove(visitedLocationPoint);
+                    animal.visitedLocations.Remove(visitedLocationPointByAnimal);
                     _context.SaveChanges();
 
                     ///Добавление нового типа и сохранение
@@ -154,12 +172,12 @@ namespace TrackingAnimal.Controllers
                 }
                 else
                 {
-                    return BadRequest();
+                    return NotFound();
                 }
             }
             else
             {
-                return BadRequest();
+                return NotFound();
             }
         }
     }
