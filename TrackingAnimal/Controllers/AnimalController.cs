@@ -39,7 +39,7 @@ namespace TrackingAnimal.Controllers
 
                 _context.Entry(animal).Collection(u => u.animalTypes).Load();
                 _context.Entry(animal).Collection(u => u.visitedLocations).Load();
-                var listTypes = animal.animalTypes.Select(animalType => animalType.Id).ToArray();
+                var listTypes = animal.animalTypes.Select(animalType => animalType.Id).Where(a => a != null).ToArray();
 
                 var sendModel = new AnimalDTO()
                 {
@@ -49,12 +49,12 @@ namespace TrackingAnimal.Controllers
                     length = animal.length,
                     height = animal.height,
                     gender = animal.gender,
-                    chipperId = (int)animal.chipperId,
+                    chipperId = animal.chipperId,
                     lifeStatus = "ALIVE",
-                    chippingLocationId = (int)animal.chippingLocationId,
+                    chippingLocationId = animal.chippingLocationId,
                     chippingDateTime = animal.chippingDateTime,
                     deathDateTime = animal.deathDateTime,
-                    visitedLocations = animal.visitedLocations.Select(a => a.Id).ToArray(),
+                    visitedLocations = animal.visitedLocations.Select(a => a.Id).ToArray()
                 };
 
                 return Ok(sendModel);
@@ -121,11 +121,24 @@ namespace TrackingAnimal.Controllers
         [HttpPost]
         public ActionResult<AnimalDTO> createAnimal([FromBody] AnimalDTO animalDTO)
         {
-            var olderId = _context.Animals.AsNoTracking().OrderByDescending(animal => animal.Id).FirstOrDefault() != null ? _context.Animals.OrderByDescending(animal => animal.Id).FirstOrDefault().Id + 1 : 1;
+            if(animalDTO.animalTypes ==null || 
+                animalDTO.animalTypes.Length <=0 || 
+                animalDTO.animalTypes.Any( t => t ==null || t <= 0) ||
+                animalDTO.weight <=0 || animalDTO.weight == null ||
+                animalDTO.length <= 0 || animalDTO.length == null ||
+                animalDTO.height <= 0 || animalDTO.height == null ||
+                animalDTO.gender == null || (animalDTO.gender != "FEMALE" && animalDTO.gender != "MALE" && animalDTO.gender != "OTHER")
+                || animalDTO.chipperId <=0 || animalDTO.chipperId ==null ||
+                animalDTO.chippingLocationId <= 0 || animalDTO.chippingLocationId == null
+                )
+            {
+                return BadRequest();
+            }
+
 #pragma warning disable CS8619 
             var model = new Animal()
             {
-                animalTypes =  animalDTO.animalTypes.Select(TypeId =>
+                animalTypes = animalDTO.animalTypes.Select(TypeId =>
                 {
                     var animalDbType = _context.AnimalTypes.FirstOrDefault(animalType => animalType.Id == TypeId);
                     if (animalDbType != null)
@@ -136,14 +149,15 @@ namespace TrackingAnimal.Controllers
                 length = animalDTO.length,
                 height = animalDTO.height,
                 gender = animalDTO.gender,
-                chipperId = animalDTO.chipperId,
+                chipperId = _context.Accounts.FirstOrDefault(a => a.Id == animalDTO.chipperId) != null ? animalDTO.chipperId : null,
                 lifeStatus = "ALIVE",
-                chippingLocationId = animalDTO.chippingLocationId
+                chippingLocationId = _context.Locations.FirstOrDefault(a => a.Id == animalDTO.chippingLocationId) != null ? animalDTO.chippingLocationId : null
             };
 #pragma warning restore CS8619 
             _context.Animals.Add(model);
             _context.SaveChanges();
             _context.Entry(model).Collection(m => m.visitedLocations).Load();
+            var olderId = _context.Animals.OrderByDescending(animal => animal.Id).FirstOrDefault() != null ? _context.Animals.OrderByDescending(animal => animal.Id).FirstOrDefault().Id : 1;
             var sendModel = new AnimalDTO()
             {
                 Id = olderId,
@@ -159,7 +173,7 @@ namespace TrackingAnimal.Controllers
                 deathDateTime = model.deathDateTime,
                 visitedLocations = model.visitedLocations.Select(a => a.Id).ToArray(),
             };
-            return Ok(sendModel);
+            return CreatedAtRoute(nameof(getAnimal), new { animalId = olderId }, sendModel);
         }
         [Authorize]
         [HttpPut("{animalId}")]
@@ -215,7 +229,7 @@ namespace TrackingAnimal.Controllers
                 _context.Entry(animal).Collection(u => u.animalTypes).Load();
                 var animalTypeNew = _context.AnimalTypes.FirstOrDefault(at => at.Id == typeId);
                 if (animalTypeNew != null)
-                { 
+                {
                     animal.animalTypes.Add(animalTypeNew);
                     _context.SaveChanges();
                     _context.Entry(animal).Collection(u => u.visitedLocations).Load();

@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 namespace TrackingAnimal.Models.DTO
@@ -8,17 +9,17 @@ namespace TrackingAnimal.Models.DTO
     {
         public long Id { get; set; }
 
-        public long[] ? animalTypes { get; set; } 
-
+        public long[]? animalTypes { get; set; }
+         
+        
         public float weight { get; set; }
         public float length { get; set; }
         public float height { get; set; }
         public string gender { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string? lifeStatus { get; set; } = "ALIVE";
-        public int chipperId { get; set; }
-
-        public long chippingLocationId { get; set; }
+        public int? chipperId { get; set; }
+        public long? chippingLocationId { get; set; }
 
         public long[] visitedLocations { get; set; } =Array.Empty<long>();
 

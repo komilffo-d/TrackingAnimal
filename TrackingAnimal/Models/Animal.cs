@@ -17,10 +17,11 @@ namespace TrackingAnimal.Models
         public float height { get; set; }
         public string gender { get; set; }
         public string lifeStatus { get; set; } = "ALIVE";
-
+    
         public int? chipperId { get; set; }
         public Account? chipper { get; set; }
 
+        [AllowNull]
         public long? chippingLocationId { get; set; }
         public LocationPoint? chippingLocation { get; set; }
 

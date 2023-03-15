@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Net.Mail;
 using TrackingAnimal.Data;
 using TrackingAnimal.Models;
 using TrackingAnimal.Models.DTO;
@@ -7,7 +8,7 @@ using TrackingAnimal.Types;
 
 namespace TrackingAnimal.Controllers
 {
-    [Route("/animals/{animalId:long}/locations")]
+    [Route("/animals")]
     [ApiController]
     public class LocationVisitedAnimalController : Controller
     {
@@ -17,7 +18,7 @@ namespace TrackingAnimal.Controllers
             _context = context;
         }
 
-        [Route("")]
+        [Route("{animalId:long}/locations")]
         [HttpGet(Name = nameof(getLocationVisitedPointsByAnimal))]
         public ActionResult getLocationVisitedPointsByAnimal(
             long animalId,
@@ -54,7 +55,7 @@ namespace TrackingAnimal.Controllers
             }
         }
         [Authorize]
-        [HttpPost("{pointId:long}")]
+        [HttpPost("{animalId:long}/locations/{pointId:long}")]
         public ActionResult createLocationVisitedPointByAnimal(long animalId, long pointId)
         {
             var animal = _context.Animals.FirstOrDefault(a => a.Id == animalId);
@@ -79,7 +80,7 @@ namespace TrackingAnimal.Controllers
                         dateTimeOfVisitLocationPoint = model.dateTimeOfVisitLocationPoint,
                         LocationPointId = model.LocationPointId
                     };
-                    return CreatedAtRoute(nameof(getLocationVisitedPointsByAnimal), new() { }, sendModel);
+                    return CreatedAtRoute(nameof(getLocationVisitedPointsByAnimal), new { animalId = model.Id }, sendModel);
                 }
                 else
                 {
@@ -88,11 +89,11 @@ namespace TrackingAnimal.Controllers
             }
             else
             {
-                return BadRequest();
+                return NotFound();
             }
         }
         [Authorize]
-        [HttpDelete("{visitedPointId}")]
+        [HttpDelete("{animalId:long}/locations/{visitedPointId}")]
         public ActionResult deleteLocationVisitedPointsByAnimal(long animalId, long visitedPointId)
         {
             var animal = _context.Animals.FirstOrDefault(a => a.Id == animalId);
@@ -118,7 +119,7 @@ namespace TrackingAnimal.Controllers
             }
         }
         [Authorize]
-        [HttpPut]
+        [HttpPut("{animalId:long}/locations")]
         public ActionResult changeLocationVisitedPointsByAnimal(long animalId, [FromBody] ChangeVisitedLocation data)
         {
             var animal = _context.Animals.FirstOrDefault(a => a.Id == animalId);
