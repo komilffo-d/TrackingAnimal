@@ -54,10 +54,10 @@ namespace TrackingAnimal.Controllers
                     Type=animalTypeDTO.Type,
                 };
                 _context.AnimalTypes.Add(model);
-                _context.SaveChanges();
+                _context.SaveChanges(); 
                 var olderId = _context.AnimalTypes.OrderByDescending(type => type.Id).FirstOrDefault() != null ? _context.AnimalTypes.OrderByDescending(type => type.Id).FirstOrDefault().Id : 1;
-                animalTypeDTO.Id = olderId;
-                return CreatedAtRoute("getTypeAnimal", new { typeId = animalTypeDTO.Id }, animalTypeDTO);
+                animalTypeDTO.Id = model.Id;
+                return CreatedAtRoute("getTypeAnimal", new { typeId = model.Id }, animalTypeDTO);
             }
             else
             {

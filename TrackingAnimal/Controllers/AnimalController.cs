@@ -10,6 +10,8 @@ using TrackingAnimal.Types;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using Microsoft.AspNetCore.Authorization;
+using System.Globalization;
+using Microsoft.VisualBasic;
 
 namespace TrackingAnimal.Controllers
 {
@@ -23,9 +25,9 @@ namespace TrackingAnimal.Controllers
             _context = context;
         }
         [HttpGet("{animalId:long}", Name = nameof(getAnimal))]
-        public ActionResult<AnimalDTO> getAnimal(int animalId)
+        public ActionResult<AnimalDTO> getAnimal(int? animalId)
         {
-            if (animalId <= 0)
+            if (animalId <= 0 || animalId == null)
             {
                 return BadRequest();
             }
@@ -63,8 +65,8 @@ namespace TrackingAnimal.Controllers
         [Route("search")]
         [HttpGet]
         public ActionResult<List<AccountDTO>> searchAccounts(
-            [FromQuery(Name = "startDateTime")] DateTime? startDateTime = null,
-            [FromQuery(Name = "endDateTime")] DateTime? endDateTime = null,
+            [FromQuery(Name = "startDateTime")] DateTime startDateTime,
+            [FromQuery(Name = "endDateTime")] DateTime endDateTime,
             [FromQuery(Name = "chipperId")] int? chipperId = null,
             [FromQuery(Name = "chippingLocationId")] long? chippingLocationId = null,
             [FromQuery(Name = "lifeStatus")] string lifeStatus = null,
@@ -73,7 +75,10 @@ namespace TrackingAnimal.Controllers
             [FromQuery(Name = "size")] int size = 10
         )
         {
-            if (from < 0 || size <= 0)
+            if (from < 0 || size <= 0 || (lifeStatus != "DEAD" && lifeStatus != "ALIVE") ||
+                (gender != "FEMALE" && gender != "MALE" && gender != "OTHER") ||
+                chipperId <= 0 || chipperId == null ||
+                chippingLocationId <= 0 || chippingLocationId == null)
             {
                 return BadRequest();
             }
@@ -121,25 +126,25 @@ namespace TrackingAnimal.Controllers
         [HttpPost]
         public ActionResult<AnimalDTO> createAnimal([FromBody] AnimalDTO animalDTO)
         {
-            if(animalDTO.animalTypes ==null || 
-                animalDTO.animalTypes.Length <=0 || 
-                animalDTO.animalTypes.Any( t => t ==null || t <= 0) ||
-                animalDTO.weight <=0 || animalDTO.weight == null ||
+            if (animalDTO.animalTypes == null ||
+                animalDTO.animalTypes.Length <= 0 ||
+                animalDTO.animalTypes.Any(t => t == null || t <= 0) ||
+                animalDTO.weight <= 0 || animalDTO.weight == null ||
                 animalDTO.length <= 0 || animalDTO.length == null ||
                 animalDTO.height <= 0 || animalDTO.height == null ||
                 animalDTO.gender == null || (animalDTO.gender != "FEMALE" && animalDTO.gender != "MALE" && animalDTO.gender != "OTHER")
-                || animalDTO.chipperId <=0 || animalDTO.chipperId ==null ||
+                || animalDTO.chipperId <= 0 || animalDTO.chipperId == null ||
                 animalDTO.chippingLocationId <= 0 || animalDTO.chippingLocationId == null
                 )
             {
                 return BadRequest();
             }
-            if(animalDTO.animalTypes.Any(typeDTO =>
+            if (animalDTO.animalTypes.Any(typeDTO =>
             {
-                return _context.AnimalTypes.FirstOrDefault(type => type.Id == typeDTO)==null;
-            }) || _context.Accounts.FirstOrDefault(account => account.Id ==animalDTO.chipperId)==null ||
-            _context.Locations.FirstOrDefault(location =>location.Id == animalDTO.chippingLocationId)==null
-            )   
+                return _context.AnimalTypes.FirstOrDefault(type => type.Id == typeDTO) == null;
+            }) || _context.Accounts.FirstOrDefault(account => account.Id == animalDTO.chipperId) == null ||
+            _context.Locations.FirstOrDefault(location => location.Id == animalDTO.chippingLocationId) == null
+            )
             {
                 return NotFound(animalDTO);
             }
@@ -186,9 +191,34 @@ namespace TrackingAnimal.Controllers
         }
         [Authorize]
         [HttpPut("{animalId}")]
-        public ActionResult<AnimalDTO> updateAnimal(int animalId, [FromBody] AnimalDTO animalDTO)
+        public ActionResult<AnimalDTO> updateAnimal(int? animalId, [FromBody] AnimalDTO animalDTO)
         {
+            if (
+                animalId == null || animalId <= 0 ||
+                animalDTO.weight <= 0 || animalDTO.weight == null ||
+                animalDTO.length <= 0 || animalDTO.length == null ||
+                animalDTO.height <= 0 || animalDTO.height == null ||
+                animalDTO.gender == null || (animalDTO.gender != "FEMALE" && animalDTO.gender != "MALE" && animalDTO.gender != "OTHER")
+                || animalDTO.chipperId <= 0 || animalDTO.chipperId == null ||
+                animalDTO.chippingLocationId <= 0 || animalDTO.chippingLocationId == null
+                || (animalDTO.lifeStatus != "ALIVE" && animalDTO.lifeStatus != "DEAD")
+            )
+            {
+                return BadRequest("неверные входные данные!");
+            }
             var animal = _context.Animals.FirstOrDefault(animal => animal.Id == animalId);
+            var account = _context.Accounts.FirstOrDefault(a => a.Id == animalDTO.chipperId);
+            var chippingLocation = _context.Locations.FirstOrDefault(l => l.Id == animalDTO.chippingLocationId);
+            if (animal == null || account == null || chippingLocation == null)
+            {
+                return NotFound();
+            }
+            _context.Entry(animal).Collection(a => a.visitedLocations).Load();
+            var firstPointAnimal = animal.visitedLocations.OrderBy(l => l.Id).Select(l => l.Id).FirstOrDefault();
+            if (animalDTO.chippingLocationId == firstPointAnimal)
+            {
+                return BadRequest("Совпадают точки локации!");
+            }
             animal.weight = animalDTO.weight;
             animal.length = animalDTO.length;
             animal.height = animalDTO.height;
@@ -196,6 +226,8 @@ namespace TrackingAnimal.Controllers
             animal.lifeStatus = animalDTO.lifeStatus;
             animal.chipperId = animalDTO.chipperId;
             animal.chippingLocationId = animalDTO.chippingLocationId;
+            if (animal.lifeStatus == "DEAD")
+                animal.deathDateTime = DateTime.Now;
             _context.Animals.Update(animal);
             _context.SaveChanges();
             _context.Entry(animal).Collection(u => u.animalTypes).Load();
@@ -219,10 +251,23 @@ namespace TrackingAnimal.Controllers
         }
         [Authorize]
         [HttpDelete("{animalId}")]
-        public ActionResult<AnimalDTO> deleteAnimal(int animalId)
+        public ActionResult<AnimalDTO> deleteAnimal(int? animalId)
         {
+            if (animalId == null || animalId <= 0)
+            {
+                return BadRequest();
+            }
             var animal = _context.Animals.FirstOrDefault(animal => animal.Id == animalId);
-
+            if (animal == null)
+            {
+                return NotFound();
+            }
+            _context.Entry(animal).Collection(a => a.visitedLocations).Load();
+            var animalsVisited = animal.visitedLocations.Where(a => a != null);
+            if (animalsVisited.Count() > 0)
+            {
+                return BadRequest();
+            }
             _context.Animals.Remove(animal);
             _context.SaveChanges();
 
@@ -232,6 +277,10 @@ namespace TrackingAnimal.Controllers
         [HttpPost("{animalId:long}/types/{typeId:long}")]
         public ActionResult changeTypeForAnimal(int animalId, int typeId)
         {
+            if(animalId <=0 || animalId==null || typeId <=0 || typeId == null)
+            {
+                return BadRequest();
+            }
             var animal = _context.Animals.FirstOrDefault(animal => animal.Id == animalId);
             if (animal != null)
             {
@@ -239,6 +288,9 @@ namespace TrackingAnimal.Controllers
                 var animalTypeNew = _context.AnimalTypes.FirstOrDefault(at => at.Id == typeId);
                 if (animalTypeNew != null)
                 {
+                    var animalTypeNewByAnimal = animal.animalTypes.FirstOrDefault(t => t.Id == animalTypeNew.Id);
+                    if (animalTypeNewByAnimal != null)
+                        return Conflict();
                     animal.animalTypes.Add(animalTypeNew);
                     _context.SaveChanges();
                     _context.Entry(animal).Collection(u => u.visitedLocations).Load();
@@ -257,11 +309,11 @@ namespace TrackingAnimal.Controllers
                         deathDateTime = animal.deathDateTime,
                         visitedLocations = animal.visitedLocations.Select(a => a.Id).ToArray(),
                     };
-                    return Ok(sendModel);
+                    return CreatedAtRoute(nameof(getAnimal),new {animalId= animal.Id },sendModel);
                 }
                 else
                 {
-                    return BadRequest();
+                    return NotFound();
                 }
 
 
@@ -273,26 +325,32 @@ namespace TrackingAnimal.Controllers
         }
         [Authorize]
         [HttpPut("{animalId}/types")]
-        public ActionResult changeTypeForAnimal(int animalId, [FromBody] ChangeType data)
+        public ActionResult changeTypeForAnimal(int? animalId, [FromBody] ChangeType data)
         {
+            if (animalId == null || animalId <= 0 || data.oldTypeId <= 0 || data.oldTypeId == null || data.newTypeId == null || data.newTypeId <= 0)
+            {
+                return BadRequest();
+            }
             var animal = _context.Animals.FirstOrDefault(animal => animal.Id == animalId);
-            if (animal != null)
+            var animalTypeNew = _context.AnimalTypes.FirstOrDefault(animalType => animalType.Id == data.newTypeId);
+            var animalTypeOld = _context.AnimalTypes.FirstOrDefault(at => at.Id == data.oldTypeId);
+            if (animal != null && animalTypeNew != null && animalTypeOld != null)
             {
                 _context.Entry(animal).Collection(u => u.animalTypes).Load();
-                var animalType = animal.animalTypes.FirstOrDefault(at => at.Id == data.oldTypeId);
-                if (animalType != null)
-                {
-                    ///Удаление старого типа и сохранение
-                    animal.animalTypes.Remove(animalType);
-                    _context.SaveChanges();
-                    ///нахождение сущности типа с новым ID
-                    var animalTypeNew = _context.AnimalTypes.FirstOrDefault(animalType => animalType.Id == data.newTypeId);
 
-                    ///Добавление нового типа и сохранение
+                var animalTypeOldByAnimal = animal.animalTypes.FirstOrDefault(t => t.Id == data.oldTypeId);
+                var animalTypeNewByAnimal = animal.animalTypes.FirstOrDefault(t => t.Id == data.newTypeId);
+
+                if (animalTypeOldByAnimal != null)
+                {
+                    if (animalTypeNewByAnimal != null)
+                    {
+                        return Conflict();
+                    }
+                    animal.animalTypes.Remove(animalTypeOldByAnimal);
+                    _context.SaveChanges();
                     animal.animalTypes.Add(animalTypeNew);
                     _context.SaveChanges();
-
-
                     _context.Entry(animal).Collection(u => u.visitedLocations).Load();
                     var sendModel = new AnimalDTO()
                     {
@@ -315,6 +373,7 @@ namespace TrackingAnimal.Controllers
                 {
                     return NotFound();
                 }
+
             }
             else
             {
@@ -325,16 +384,26 @@ namespace TrackingAnimal.Controllers
         [HttpDelete("{animalId:long}/types/{typeId:long}")]
         public ActionResult<AnimalDTO> deleteTypeForAnimal(long animalId, long typeId)
         {
-            var animal = _context.Animals.FirstOrDefault(animal => animal.Id == animalId);
-            if (animal != null)
+            if (animalId <= 0 || animalId == null || typeId <= 0 || typeId == null)
             {
+                return BadRequest();
+            }
+            var animal = _context.Animals.FirstOrDefault(animal => animal.Id == animalId);
+            var animalType = _context.AnimalTypes.FirstOrDefault(t => t.Id == typeId);
+            if (animal != null && animalType!=null)
+            {
+                
                 _context.Entry(animal).Collection(u => u.animalTypes).Load();
-                var animalType = animal.animalTypes.FirstOrDefault(at => at.Id == typeId);
-                if (animalType != null)
+                if (animal.animalTypes.Count() ==1 && animal.animalTypes.First().Id == typeId)
                 {
-                    animal.animalTypes.Remove(animalType);
+                    return BadRequest();
+                }
+                    var animalTypeByAnimal = animal.animalTypes.FirstOrDefault(at => at.Id == typeId);
+                if (animalTypeByAnimal != null)
+                {
+                    animal.animalTypes.Remove(animalTypeByAnimal);
                     _context.SaveChanges();
-                    return CreatedAtRoute(nameof(getAnimal), new { animalId = animalId }, new { });
+                    return Ok(animal);
                 }
                 else
                 {

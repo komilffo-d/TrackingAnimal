@@ -118,10 +118,10 @@ namespace TrackingAnimal.Controllers
         }
         [Authorize]
         [HttpDelete("{pointId}")]
-        public ActionResult deleteAccount(int pointId)
+        public ActionResult deleteAccount(int? pointId)
         {
 
-            if (pointId <= 0)
+            if (pointId <= 0 || pointId==null)
             {
                 return BadRequest();
             }
@@ -132,6 +132,12 @@ namespace TrackingAnimal.Controllers
             }
             else
             {
+                _context.Entry(locationPoint).Collection(l => l.Animals).Load();
+                var animalsLinked = locationPoint.Animals.Where(a => a != null);
+                if (animalsLinked.Count() <= 0)
+                {
+                    return BadRequest();
+                }
                 _context.Locations.Remove(locationPoint);
                 _context.SaveChanges();
                 return Ok();
