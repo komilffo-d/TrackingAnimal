@@ -134,6 +134,15 @@ namespace TrackingAnimal.Controllers
             {
                 return BadRequest();
             }
+            if(animalDTO.animalTypes.Any(typeDTO =>
+            {
+                return _context.AnimalTypes.FirstOrDefault(type => type.Id == typeDTO)==null;
+            }) || _context.Accounts.FirstOrDefault(account => account.Id ==animalDTO.chipperId)==null ||
+            _context.Locations.FirstOrDefault(location =>location.Id == animalDTO.chippingLocationId)==null
+            )   
+            {
+                return NotFound(animalDTO);
+            }
 
 #pragma warning disable CS8619 
             var model = new Animal()

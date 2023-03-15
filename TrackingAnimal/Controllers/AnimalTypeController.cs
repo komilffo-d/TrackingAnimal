@@ -48,14 +48,15 @@ namespace TrackingAnimal.Controllers
             var animalType = _context.AnimalTypes.FirstOrDefault(type => type.Type == animalTypeDTO.Type);
             if (animalType == null)
             {
-                var olderId = _context.AnimalTypes.OrderByDescending(type => type.Id).FirstOrDefault() != null ? _context.AnimalTypes.OrderByDescending(type => type.Id).FirstOrDefault().Id + 1 : 1;
-                animalTypeDTO.Id = olderId;
+
                 var model = new AnimalType()
                 {
                     Type=animalTypeDTO.Type,
                 };
                 _context.AnimalTypes.Add(model);
                 _context.SaveChanges();
+                var olderId = _context.AnimalTypes.OrderByDescending(type => type.Id).FirstOrDefault() != null ? _context.AnimalTypes.OrderByDescending(type => type.Id).FirstOrDefault().Id : 1;
+                animalTypeDTO.Id = olderId;
                 return CreatedAtRoute("getTypeAnimal", new { typeId = animalTypeDTO.Id }, animalTypeDTO);
             }
             else

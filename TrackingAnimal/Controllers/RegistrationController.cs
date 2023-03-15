@@ -46,7 +46,7 @@ namespace TrackingAnimal.Controllers
                 _context.Accounts.Add(model);
                 _context.SaveChanges();
 
-                var olderId = _context.Accounts.OrderByDescending(a => a.Id).FirstOrDefault()!=null ? _context.Accounts.OrderByDescending(a => a.Id).FirstOrDefault().Id +1 : 1;
+                var olderId = _context.Accounts.OrderByDescending(a => a.Id).FirstOrDefault()!=null ? _context.Accounts.OrderByDescending(a => a.Id).FirstOrDefault().Id : 1;
                 var sendModel = new AccountDTO()
                 {
                     Id = olderId,
